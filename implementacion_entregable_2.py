@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from datetime import datetime
 import random
+import time
 
 # Clase Entorno
 class Entorno:
@@ -203,3 +204,45 @@ class ConsumidorKafka:
         # Método que recibe los datos generados por el productor
         self.publicador.set_datos(*mensaje)
 
+# Ejemplo de uso
+
+if "__main__" == __name__:
+    # Inicialización del entorno y los componentes
+    entorno = Entorno.obtener_instancia()
+    publicador = entorno.publicador
+
+    #  Configuración de los manejadores
+    manejador_estadistico_a = ManejadorTemperaturaAEstadistico()
+    manejador_umbral_a = ManejadorTemperaturaAUmbral(manejador_estadistico_a)
+    manejador_aumento_a = ManejadorTemperaturaAAumento(manejador_umbral_a)
+
+    manejador_estadistico_b = ManejadorTemperaturaBEstadistico()
+    manejador_umbral_b = ManejadorTemperaturaBUmbral(manejador_estadistico_b)
+    manejador_aumento_b = ManejadorTemperaturaBAumento(manejador_umbral_b)
+
+    publicador.agregar(manejador_aumento_a)
+    publicador.agregar(manejador_aumento_b)
+
+    # Inicialización de productor y consumidor Kafka
+    productor = ProductorKafka()
+    consumidor = ConsumidorKafka(publicador)
+
+    # Simulación de envío y recepción de datos
+    for _ in range(10):
+        mensaje = productor.producir()
+        consumidor.consumir(mensaje)
+        time.sleep(1)
+
+    # Cálculo de estadísticas
+    contexto = Contexto(ComputarEstadisticoMediaSd())
+    datos = publicador.obtener_datos()
+    resultado_media_sd = contexto.hacer_algo(datos)
+    print("Media y desviación estándar:", resultado_media_sd)
+
+    contexto.establecer_estrategia(ComputarEstadisticoCuantiles())
+    resultado_cuantiles = contexto.hacer_algo(datos)
+    print("Cuantiles:", resultado_cuantiles)
+
+    contexto.establecer_estrategia(ComputarEstadisticoMaxMin())
+    resultado_max_min = contexto.hacer_algo(datos)
+    print("Máximo y Mínimo:", resultado_max_min)
