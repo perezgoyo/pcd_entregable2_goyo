@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from functools import reduce
+from datetime import datetime
+import random
 
 # Clase Entorno
 class Entorno:
@@ -138,4 +141,65 @@ class ManejadorTemperaturaBAumento(Subscriptor):
         if self._siguiente:
             self._siguiente.actualizar(evento)
 
+# Clase ComputarEstadistico
+class ComputarEstadistico(ABC):
+    # Es un método abstracto porque luego la clase que hereda el método redefine el mismo(sobrecarga)
+    @abstractmethod
+    def aplicar_estadistico(self, datos):
+        pass
+
+class ComputarEstadisticoMediaSd(ComputarEstadistico):
+    def aplicar_estadistico(self, datos):
+        # Método que computa diferentes estadísticos de la temperatura cómo son la media y la desviación típica
+        temperaturas = list(map(lambda x: x[1], datos))
+        n = len(temperaturas)
+        media = reduce(lambda x, y: x + y, temperaturas) / n
+        varianza = reduce(lambda x, y: x + (y - media) ** 2, temperaturas, 0) / n
+        desviacion = varianza ** 0.5
+        return {"media": media, "desviacion_tipica": desviacion}
+
+class ComputarEstadisticoCuantiles(ComputarEstadistico):
+    def aplicar_estadistico(self, datos):
+        # Método que clasifica las temperaturas según sus cuantiles
+        temperaturas = sorted(map(lambda x: x[1], datos))
+        n = len(temperaturas)
+        percentil = lambda p: temperaturas[int(p * n)]
+        return {"q1": percentil(0.25), "mediana": percentil(0.5), "q3": percentil(0.75)}
+
+class ComputarEstadisticoMaxMin(ComputarEstadistico):
+    def aplicar_estadistico(self, datos):
+        # Método que devuelve la temperaturas máximas y mínimas registradas
+        temperaturas = list(map(lambda x: x[1], datos))
+        max_temp = reduce(lambda x, y: x if x > y else y, temperaturas)
+        min_temp = reduce(lambda x, y: x if x < y else y, temperaturas)
+        return {"maximo": max_temp, "minimo": min_temp}
+
+# Clase Contexto
+class Contexto:
+    def __init__(self, estrategia):
+        self.estrategia = estrategia
+
+    def establecer_estrategia(self, estrategia):
+        self.estrategia = estrategia
+
+    def hacer_algo(self, datos):
+        return self.estrategia.aplicar_estadistico(datos)
+
+
+# Clases ProductorKafka y ConsumidorKafka
+class ProductorKafka:
+    def producir(self):
+        # Método que produce datos aleatorios de temperatura
+        timestamp = datetime.now()
+        temperatura = random.uniform(12.5, 32.5)
+        return timestamp, temperatura
+
+class ConsumidorKafka:
+    # Constructor de la clase
+    def __init__(self, publicador):
+        self.publicador = publicador
+
+    def consumir(self, mensaje):
+        # Método que recibe los datos generados por el productor
+        self.publicador.set_datos(*mensaje)
 
