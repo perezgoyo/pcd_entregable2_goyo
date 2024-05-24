@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 # Clase Entorno
 class Entorno:
     _instancia = None # Variable de clase para almacenar la única instancia
@@ -49,5 +51,91 @@ class PublicadorDatosSensor:
         # Método para obtener los datos de los últimos 60 segundos para el cálculo de estadísticas
         return self._datos[-n:]
 
+# Clases Subscriptor y ManejadorTemperatura
+class Subscriptor(ABC):
+    @abstractmethod
+    # Es un método abstracto porque luego la clase que hereda el método redefine el mismo(sobrecarga)
+    def actualizar(self, evento):
+        pass
+
+class ManejadorTemperaturaAEstadistico(Subscriptor):
+    def actualizar(self, evento):
+        # Método que recibe la actualización del evento determinado por un Estadístico para A
+        print("Manejador A Estadístico recibió:", evento)
+
+class ManejadorTemperaturaAUmbral(Subscriptor):
+    # Constructor de la clase
+    def __init__(self, siguiente=None):
+        self._siguiente = siguiente
+
+    def actualizar(self, evento):
+        # Método que recibe la actualización del evento determinado por un Umbral concreto para A
+        timestamp, temperatura = evento
+        umbral = 30.0 # Se recibe la notificación si la temperatura es mayor que el umbral determinado
+        if temperatura > umbral:
+            print("Temperatura supera el umbral:", temperatura)
+        if self._siguiente:
+            self._siguiente.actualizar(evento)
+
+class ManejadorTemperaturaAAumento(Subscriptor):
+    # Constructor de la clase
+    def __init__(self, siguiente=None):
+        self._siguiente = siguiente
+        self.ultimas_temperaturas = []
+
+    def actualizar(self, evento):
+        # Método que recibe la actualización del evento determinado por un aumento de las temperaturas  para A
+        self.ultimas_temperaturas.append(evento)
+        if len(self.ultimas_temperaturas) > 6:  # asumiendo que se reciben datos cada 5 segundos
+            self.ultimas_temperaturas.pop(0)
+
+        if len(self.ultimas_temperaturas) == 6:
+            # Recibe una notificación 
+            temp_inicial = self.ultimas_temperaturas[0][1]
+            temp_final = self.ultimas_temperaturas[-1][1]
+            if temp_final - temp_inicial > 10:
+                print("Temperatura aumentó más de 10 grados en los últimos 30 segundos.")
+
+        if self._siguiente:
+            self._siguiente.actualizar(evento)
+
+class ManejadorTemperaturaBEstadistico(Subscriptor):
+    # Método que recibe la actualización del evento determinado por un Estadístico para B
+    def actualizar(self, evento):
+        print("Manejador B Estadístico recibió:", evento)
+
+class ManejadorTemperaturaBUmbral(Subscriptor):
+    # Método que recibe la actualización del evento determinado por un Umbral concreto para B
+    def __init__(self, siguiente=None):
+        self._siguiente = siguiente
+
+    def actualizar(self, evento):
+        timestamp, temperatura = evento
+        umbral = 22.0
+        if temperatura > umbral:
+            print("Temperatura supera el umbral:", temperatura)
+        if self._siguiente:
+            self._siguiente.actualizar(evento)
+
+class ManejadorTemperaturaBAumento(Subscriptor):
+    # Constructor de la clase
+    def __init__(self, siguiente=None):
+        self._siguiente = siguiente
+        self.ultimas_temperaturas = []
+
+    def actualizar(self, evento):
+        # Método que recibe la actualización del evento determinado por un aumento de las temperaturas  para A
+        self.ultimas_temperaturas.append(evento)
+        if len(self.ultimas_temperaturas) > 4:
+            self.ultimas_temperaturas.pop(0)
+
+        if len(self.ultimas_temperaturas) == 4:
+            temp_inicial = self.ultimas_temperaturas[0][1]
+            temp_final = self.ultimas_temperaturas[-1][1]
+            if temp_final - temp_inicial > 10:
+                print("Temperatura aumentó más de 10 grados en los últimos 30 segundos.")
+
+        if self._siguiente:
+            self._siguiente.actualizar(evento)
 
 
