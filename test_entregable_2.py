@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from implementacion_entregable_2 import Entorno, PublicadorDatosSensor
+from implementacion_entregable_2 import Entorno, PublicadorDatosSensor, ManejadorTemperaturaAEstadistico
 
 class MockSubscriptor:
     def __init__(self):
@@ -30,4 +30,8 @@ def test_publicador_notifica_subscriptor(publicador):
     temperatura = 25.0
     publicador.set_datos(timestamp, temperatura)
     assert subscriptor.evento == (timestamp, temperatura)
+
+def test_manejador_temperatura_a_estadistico():
+    manejador = ManejadorTemperaturaAEstadistico()
+    assert manejador is not None
 
